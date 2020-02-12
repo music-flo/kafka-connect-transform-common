@@ -125,6 +125,53 @@ public abstract class PatternRenameTest extends TransformationTest {
     assertStruct(expectedStruct, actualStruct);
   }
 
+  @Test
+  public void recursiveMap() {
+    this.transformation.configure(
+        ImmutableMap.of(
+            PatternRenameConfig.FIELD_PATTERN_CONF, "\\.",
+            PatternRenameConfig.FIELD_REPLACEMENT_CONF, "_",
+            PatternRenameConfig.FIELD_RECURSIVE_LEVEL_CONF, 1
+        )
+    );
+
+    final Map<String, Object> input = ImmutableMap.of(
+        "first.name", "example",
+        "last.name", ImmutableMap.of(
+            "nested.name.1st", ImmutableMap.of(
+                "nested.name.2nd", "user"
+            )
+        )
+    );
+    final Map<String, Object> expected = ImmutableMap.of(
+        "first_name", "example",
+        "last_name", ImmutableMap.of(
+            "nested_name_1st", ImmutableMap.of(
+                "nested.name.2nd", "user"
+            )
+        )
+    );
+
+    final Object key = isKey ? input : null;
+    final Object value = isKey ? null : input;
+    final Schema keySchema = null;
+    final Schema valueSchema = null;
+
+    final SinkRecord inputRecord = new SinkRecord(
+        TOPIC,
+        1,
+        keySchema,
+        key,
+        valueSchema,
+        value,
+        1234L
+    );
+    final SinkRecord outputRecord = this.transformation.apply(inputRecord);
+    assertNotNull(outputRecord);
+    final Map<String, Object> actual = (Map<String, Object>) (isKey ? outputRecord.key() : outputRecord.value());
+    assertMap(expected, actual, "");
+  }
+
   public static class KeyTest<R extends ConnectRecord<R>> extends PatternRenameTest {
     protected KeyTest() {
       super(true);

@@ -20,6 +20,7 @@ import com.github.jcustenborder.kafka.connect.utils.config.DocumentationTip;
 import com.github.jcustenborder.kafka.connect.utils.config.Title;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.ConnectRecord;
+import org.apache.kafka.connect.data.ConnectSchema;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -94,8 +95,12 @@ public abstract class PatternRename<R extends ConnectRecord<R>> extends BaseTran
 
   @Override
   protected SchemaAndValue processMap(R record, Map<String, Object> input) {
-    final Map<String, Object> outputMap = new LinkedHashMap<>(input.size());
+    final Map<String, Object> outputMap = processMapRecursively(input, this.config.recursiveLevel);
+    return new SchemaAndValue(null, outputMap);
+  }
 
+  private Map<String, Object> processMapRecursively(Map<String, Object> input, int recursiveLevel) {
+    final Map<String, Object> outputMap = new LinkedHashMap<>(input.size());
     for (final String inputFieldName : input.keySet()) {
       log.trace("process() - Processing field '{}'", inputFieldName);
       final Matcher fieldMatcher = this.config.pattern.matcher(inputFieldName);
@@ -105,10 +110,20 @@ public abstract class PatternRename<R extends ConnectRecord<R>> extends BaseTran
       } else {
         outputFieldName = inputFieldName;
       }
-      final Object value = input.get(inputFieldName);
-      outputMap.put(outputFieldName, value);
+      final Object inputValue = input.get(inputFieldName);
+      final Object outputValue;
+      if (0 == recursiveLevel || null == inputValue) {
+        outputValue = inputValue;
+      } else {
+        if (Schema.Type.MAP == ConnectSchema.schemaType(inputValue.getClass())) {
+          outputValue = processMapRecursively((Map<String, Object>) inputValue, recursiveLevel - 1);
+        } else {
+          outputValue = inputValue;
+        }
+      }
+      outputMap.put(outputFieldName, outputValue);
     }
-    return new SchemaAndValue(null, outputMap);
+    return outputMap;
   }
 
   @Title("PatternRename(Key)")

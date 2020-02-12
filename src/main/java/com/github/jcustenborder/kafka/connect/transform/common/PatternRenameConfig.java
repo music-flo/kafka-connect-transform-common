@@ -36,9 +36,13 @@ class PatternRenameConfig extends AbstractConfig {
   public static final String FIELD_REPLACEMENT_CONF = "field.replacement";
   static final String FIELD_REPLACEMENT_DOC = "";
 
+  public static final String FIELD_RECURSIVE_LEVEL_CONF = "field.recursive.level";
+  static final String FIELD_RECURSIVE_LEVEL_DOC = "";
+
 
   public final Pattern pattern;
   public final String replacement;
+  public final int recursiveLevel;
 
   public PatternRenameConfig(Map<String, ?> parsedConfig) {
     super(config(), parsedConfig);
@@ -51,6 +55,7 @@ class PatternRenameConfig extends AbstractConfig {
     }
     this.pattern = Pattern.compile(pattern, patternFlags);
     this.replacement = getString(FIELD_REPLACEMENT_CONF);
+    this.recursiveLevel = getInt(FIELD_RECURSIVE_LEVEL_CONF);
   }
 
   static final Map<String, Integer> FLAG_VALUES;
@@ -75,6 +80,7 @@ class PatternRenameConfig extends AbstractConfig {
     return new ConfigDef()
         .define(FIELD_PATTERN_CONF, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, FIELD_PATTERN_DOC)
         .define(FIELD_PATTERN_FLAGS_CONF, ConfigDef.Type.LIST, Arrays.asList("CASE_INSENSITIVE"), ConfigDef.ValidList.in("UNICODE_CHARACTER_CLASS", "CANON_EQ", "UNICODE_CASE", "DOTALL", "LITERAL", "MULTILINE", "COMMENTS", "CASE_INSENSITIVE", "UNIX_LINES"), ConfigDef.Importance.LOW, FIELD_PATTERN_FLAGS_DOC)
-        .define(FIELD_REPLACEMENT_CONF, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, FIELD_REPLACEMENT_DOC);
+        .define(FIELD_REPLACEMENT_CONF, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, FIELD_REPLACEMENT_DOC)
+        .define(FIELD_RECURSIVE_LEVEL_CONF, ConfigDef.Type.INT, 0, ConfigDef.Importance.MEDIUM, FIELD_RECURSIVE_LEVEL_DOC);
   }
 }
